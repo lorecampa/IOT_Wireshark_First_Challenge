@@ -1,0 +1,644 @@
+[
+    {
+        "id": "5b87027bf8f66a05",
+        "type": "mqtt in",
+        "z": "3da03f91e594bdcd",
+        "name": "hivemq",
+        "topic": "polimi/challenge_2/2023/id_code_generator",
+        "qos": "2",
+        "datatype": "auto-detect",
+        "broker": "dd45a1bcf5e4b158",
+        "nl": false,
+        "rap": true,
+        "rh": 0,
+        "inputs": 0,
+        "x": 90,
+        "y": 160,
+        "wires": [
+            [
+                "a2ea935fd0b2d92d"
+            ]
+        ]
+    },
+    {
+        "id": "a2ea935fd0b2d92d",
+        "type": "function",
+        "z": "3da03f91e594bdcd",
+        "name": "n_extraction",
+        "func": "const { reset_counter = false } = msg;\nif (reset_counter) {\n    context.set('counter', 0);\n    return;\n}\nconst {payload} = msg;\nconst divider = flow.get('divider');\nconst person_code = flow.get('person_code');\nvar {id} = payload\nvar counter = parseInt(context.get('counter') ?? 0);\ncontext.set('counter', ++counter)\nif (!id || !divider) return;\nconst n = (parseInt(id) + parseInt(person_code.slice(-4))) % divider\nreturn {n, id, counter};",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 270,
+        "y": 160,
+        "wires": [
+            [
+                "36e27e034b3ff4ee"
+            ]
+        ]
+    },
+    {
+        "id": "845a3fbba4a2177a",
+        "type": "function",
+        "z": "3da03f91e594bdcd",
+        "name": "parser_pub_messages",
+        "func": "const {n, id, counter} = msg\nconsole.log(counter)\nconst packets = flow.get(\"packets\") ?? []\nconst person_code = flow.get('person_code')\nconst timestamp = new Date().toISOString();\nconst topic = `/polimi/iot2023/challenge2/${person_code}`\nconst messages = packets.filter(r => r['No.'] == n && r['Info'].startsWith('Publish Message'))\n    .map(r => {\n        var { ['No.']: No, ['Info']: info, ['Message']: message, ...rest } = r;\n        const regex_infos = /(?<=\\[)[^\\[\\]]*(?=\\])/g;\n        const topics = info ? info.match(regex_infos) : []\n        const regex_messages = /{[^}]+}/g;\n        const messages = message ? message.match(regex_messages) : []\n        return { ...rest, topics, messages };\n    })\n    .flatMap(r => {\n        const res = [];\n        const topic_len = r.topics ? r.topics.length : 0;\n        for (let i = 0; i < topic_len; i++) {\n            const {topics, messages, ...rest} = r\n            res.push({ \n                ...rest,\n                topic: topics[i], \n                message: messages[i]\n                })\n        }\n        return res;\n    })\n    .map(p => {\n        const {message} = p\n        const payload = {\n        'CURRENT_TIMESTAMP': timestamp,\n        'PREVIOUS_ID': id,\n        'MQTT_PUBLISH_PAYLOAD': message\n        }\n        return {topic, payload};\n    })\n\n\nreturn {payload: messages};",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 600,
+        "y": 300,
+        "wires": [
+            [
+                "175ff178cca86de0"
+            ]
+        ]
+    },
+    {
+        "id": "4ebb8ff44b5345cb",
+        "type": "csv",
+        "z": "3da03f91e594bdcd",
+        "name": "parse_packets",
+        "sep": ",",
+        "hdrin": true,
+        "hdrout": "none",
+        "multi": "mult",
+        "ret": "\\n",
+        "temp": "No.,Time,Source,Destination,Protocol,Length,Source Port,Destination Port,Info,Message",
+        "skip": "0",
+        "strings": true,
+        "include_empty_strings": "",
+        "include_null_values": "",
+        "x": 480,
+        "y": 520,
+        "wires": [
+            [
+                "8cd65cb79498d14e"
+            ]
+        ]
+    },
+    {
+        "id": "e529145d0c386396",
+        "type": "file in",
+        "z": "3da03f91e594bdcd",
+        "name": "packets.csv",
+        "filename": "/Users/lorecampa/Desktop/IOT_challenges/challenge_02/packets.csv",
+        "filenameType": "str",
+        "format": "utf8",
+        "chunk": false,
+        "sendError": false,
+        "encoding": "none",
+        "allProps": false,
+        "x": 290,
+        "y": 520,
+        "wires": [
+            [
+                "4ebb8ff44b5345cb"
+            ]
+        ]
+    },
+    {
+        "id": "4d2bf534b8bd1c80",
+        "type": "inject",
+        "z": "3da03f91e594bdcd",
+        "name": "",
+        "props": [],
+        "repeat": "",
+        "crontab": "",
+        "once": true,
+        "onceDelay": 0.1,
+        "topic": "",
+        "x": 110,
+        "y": 520,
+        "wires": [
+            [
+                "e529145d0c386396",
+                "649fa20f686d10f2",
+                "ef259f89d3027cb7",
+                "c44943901c4373eb",
+                "c4bd84a71fe303db"
+            ]
+        ]
+    },
+    {
+        "id": "175ff178cca86de0",
+        "type": "split",
+        "z": "3da03f91e594bdcd",
+        "name": "flatmap",
+        "splt": "\\n",
+        "spltType": "str",
+        "arraySplt": 1,
+        "arraySpltType": "len",
+        "stream": false,
+        "addname": "",
+        "x": 800,
+        "y": 300,
+        "wires": [
+            [
+                "125adcb575a0e9b2"
+            ]
+        ]
+    },
+    {
+        "id": "36e27e034b3ff4ee",
+        "type": "switch",
+        "z": "3da03f91e594bdcd",
+        "name": "less_than_x_request",
+        "property": "counter",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "eq",
+                "v": "1",
+                "vt": "num"
+            },
+            {
+                "t": "btwn",
+                "v": "1",
+                "vt": "num",
+                "v2": "100",
+                "v2t": "num"
+            },
+            {
+                "t": "eq",
+                "v": "101",
+                "vt": "num"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 3,
+        "x": 360,
+        "y": 300,
+        "wires": [
+            [
+                "fcff80d2808b7544"
+            ],
+            [
+                "845a3fbba4a2177a"
+            ],
+            [
+                "c6b049416209850c"
+            ]
+        ]
+    },
+    {
+        "id": "4347fc7a94704bae",
+        "type": "mqtt in",
+        "z": "3da03f91e594bdcd",
+        "name": "subscribe",
+        "topic": "",
+        "qos": "2",
+        "datatype": "auto-detect",
+        "broker": "dd45a1bcf5e4b158",
+        "nl": false,
+        "rap": true,
+        "rh": 0,
+        "inputs": 1,
+        "x": 400,
+        "y": 660,
+        "wires": [
+            [
+                "b7c716adaf3c56d7"
+            ]
+        ]
+    },
+    {
+        "id": "c44943901c4373eb",
+        "type": "function",
+        "z": "3da03f91e594bdcd",
+        "name": "dynamic_sub",
+        "func": "const person_code = flow.get('person_code');\nconst topic = `/polimi/iot2023/challenge2/${person_code}`\nconst action = 'subscribe';\nreturn {action, topic};",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 230,
+        "y": 660,
+        "wires": [
+            [
+                "4347fc7a94704bae"
+            ]
+        ]
+    },
+    {
+        "id": "fac9ac66b5ae27b7",
+        "type": "mqtt out",
+        "z": "3da03f91e594bdcd",
+        "name": "publisher",
+        "topic": "",
+        "qos": "",
+        "retain": "",
+        "respTopic": "",
+        "contentType": "",
+        "userProps": "",
+        "correl": "",
+        "expiry": "",
+        "broker": "dd45a1bcf5e4b158",
+        "x": 1220,
+        "y": 300,
+        "wires": []
+    },
+    {
+        "id": "0898207824ae1a17",
+        "type": "switch",
+        "z": "3da03f91e594bdcd",
+        "name": "celsius",
+        "property": "payload.MQTT_PUBLISH_PAYLOAD.unit",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "eq",
+                "v": "C",
+                "vt": "str"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 1,
+        "x": 690,
+        "y": 660,
+        "wires": [
+            [
+                "c107b0c24595e8d1",
+                "2881a23c3707aea0"
+            ]
+        ]
+    },
+    {
+        "id": "b918b7dc79c10cc6",
+        "type": "file",
+        "z": "3da03f91e594bdcd",
+        "name": "result.csv",
+        "filename": "/Users/lorecampa/Desktop/IOT_challenges/challenge_02/result.csv",
+        "filenameType": "str",
+        "appendNewline": true,
+        "createDir": false,
+        "overwriteFile": "false",
+        "encoding": "none",
+        "x": 1100,
+        "y": 740,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "32d552a04feb68b9",
+        "type": "ui_gauge",
+        "z": "3da03f91e594bdcd",
+        "name": "gauge",
+        "group": "5646bb71b98db5ff",
+        "order": 0,
+        "width": 0,
+        "height": 0,
+        "gtype": "gage",
+        "title": "Temperature",
+        "label": "°C",
+        "format": "{{value}}",
+        "min": 0,
+        "max": "100",
+        "colors": [
+            "#00b500",
+            "#e6e600",
+            "#ca3838"
+        ],
+        "seg1": "",
+        "seg2": "",
+        "diff": false,
+        "className": "",
+        "x": 1110,
+        "y": 660,
+        "wires": []
+    },
+    {
+        "id": "c107b0c24595e8d1",
+        "type": "function",
+        "z": "3da03f91e594bdcd",
+        "name": "get_temperature",
+        "func": "const temperature = parseInt(msg.payload.MQTT_PUBLISH_PAYLOAD.range[1]);\nreturn {payload: temperature};",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 880,
+        "y": 660,
+        "wires": [
+            [
+                "b656c5abc0f7b39f",
+                "32d552a04feb68b9"
+            ]
+        ]
+    },
+    {
+        "id": "b7c716adaf3c56d7",
+        "type": "json",
+        "z": "3da03f91e594bdcd",
+        "name": "to_object",
+        "property": "payload.MQTT_PUBLISH_PAYLOAD",
+        "action": "obj",
+        "pretty": false,
+        "x": 540,
+        "y": 660,
+        "wires": [
+            [
+                "0898207824ae1a17",
+                "46d4ef54eb6ba0e2"
+            ]
+        ]
+    },
+    {
+        "id": "2881a23c3707aea0",
+        "type": "function",
+        "z": "3da03f91e594bdcd",
+        "name": "get_message",
+        "func": "return {payload: msg.payload.MQTT_PUBLISH_PAYLOAD};",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 880,
+        "y": 740,
+        "wires": [
+            [
+                "b918b7dc79c10cc6",
+                "b4045dae03bd7e95"
+            ]
+        ]
+    },
+    {
+        "id": "649fa20f686d10f2",
+        "type": "file",
+        "z": "3da03f91e594bdcd",
+        "name": "delete_result.csv",
+        "filename": "/Users/lorecampa/Desktop/IOT_challenges/challenge_02/result.csv",
+        "filenameType": "str",
+        "appendNewline": true,
+        "createDir": false,
+        "overwriteFile": "delete",
+        "encoding": "none",
+        "x": 290,
+        "y": 440,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "b4045dae03bd7e95",
+        "type": "debug",
+        "z": "3da03f91e594bdcd",
+        "name": "to_write_file",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1090,
+        "y": 820,
+        "wires": []
+    },
+    {
+        "id": "125adcb575a0e9b2",
+        "type": "function",
+        "z": "3da03f91e594bdcd",
+        "name": "get_pub_message",
+        "func": "return msg.payload;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 990,
+        "y": 300,
+        "wires": [
+            [
+                "fac9ac66b5ae27b7",
+                "bdfe1b57000e2ae8"
+            ]
+        ]
+    },
+    {
+        "id": "bdfe1b57000e2ae8",
+        "type": "debug",
+        "z": "3da03f91e594bdcd",
+        "name": "pub_message",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1180,
+        "y": 220,
+        "wires": []
+    },
+    {
+        "id": "ef259f89d3027cb7",
+        "type": "function",
+        "z": "3da03f91e594bdcd",
+        "name": "constant_setup",
+        "func": "const {payload: packets} = msg;\nflow.set('person_code', \"10605775\");\nflow.set('divider', 7711);\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 300,
+        "y": 600,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "8cd65cb79498d14e",
+        "type": "function",
+        "z": "3da03f91e594bdcd",
+        "name": "set_packets",
+        "func": "const {payload} = msg;\nflow.set(\"packets\", payload)\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 670,
+        "y": 520,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "c6b049416209850c",
+        "type": "function",
+        "z": "3da03f91e594bdcd",
+        "name": "END",
+        "func": "const person_code = flow.get('person_code');\nconst topic = `/polimi/iot2023/challenge2/${person_code}`\nconst payload = \"END\";\nreturn {topic, payload};",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 810,
+        "y": 400,
+        "wires": [
+            [
+                "fac9ac66b5ae27b7"
+            ]
+        ]
+    },
+    {
+        "id": "fcff80d2808b7544",
+        "type": "function",
+        "z": "3da03f91e594bdcd",
+        "name": "START",
+        "func": "const person_code = flow.get('person_code');\nconst topic = `/polimi/iot2023/challenge2/${person_code}`\nconst payload = \"START\";\nreturn {topic, payload};",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 810,
+        "y": 220,
+        "wires": [
+            [
+                "fac9ac66b5ae27b7"
+            ]
+        ]
+    },
+    {
+        "id": "46d4ef54eb6ba0e2",
+        "type": "debug",
+        "z": "3da03f91e594bdcd",
+        "name": "sub_message",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 600,
+        "y": 800,
+        "wires": []
+    },
+    {
+        "id": "b656c5abc0f7b39f",
+        "type": "ui_chart",
+        "z": "3da03f91e594bdcd",
+        "name": "line_chart",
+        "group": "5646bb71b98db5ff",
+        "order": 1,
+        "width": 0,
+        "height": 0,
+        "label": "chart",
+        "chartType": "line",
+        "legend": "true",
+        "xformat": "HH:mm:ss",
+        "interpolate": "linear",
+        "nodata": "",
+        "dot": false,
+        "ymin": "",
+        "ymax": "",
+        "removeOlder": 1,
+        "removeOlderPoints": "",
+        "removeOlderUnit": "3600",
+        "cutout": 0,
+        "useOneColor": false,
+        "useUTC": false,
+        "colors": [
+            "#1f77b4",
+            "#aec7e8",
+            "#ff7f0e",
+            "#2ca02c",
+            "#98df8a",
+            "#d62728",
+            "#ff9896",
+            "#9467bd",
+            "#c5b0d5"
+        ],
+        "outputs": 1,
+        "useDifferentColor": false,
+        "className": "",
+        "x": 1120,
+        "y": 600,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "c4bd84a71fe303db",
+        "type": "function",
+        "z": "3da03f91e594bdcd",
+        "name": "reset_counter",
+        "func": "\nreturn {reset_counter: true};",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 100,
+        "y": 380,
+        "wires": [
+            [
+                "a2ea935fd0b2d92d"
+            ]
+        ]
+    },
+    {
+        "id": "dd45a1bcf5e4b158",
+        "type": "mqtt-broker",
+        "name": "broker.hivemq.com",
+        "broker": "broker.hivemq.com",
+        "port": "1883",
+        "clientid": "",
+        "autoConnect": true,
+        "usetls": false,
+        "protocolVersion": "4",
+        "keepalive": "60",
+        "cleansession": true,
+        "birthTopic": "",
+        "birthQos": "0",
+        "birthPayload": "",
+        "birthMsg": {},
+        "closeTopic": "",
+        "closeQos": "0",
+        "closePayload": "",
+        "closeMsg": {},
+        "willTopic": "",
+        "willQos": "0",
+        "willPayload": "",
+        "willMsg": {},
+        "userProps": "",
+        "sessionExpiry": ""
+    },
+    {
+        "id": "5646bb71b98db5ff",
+        "type": "ui_group",
+        "name": "Default",
+        "tab": "4a22e695390647c3",
+        "order": 1,
+        "disp": true,
+        "width": "6",
+        "collapse": false,
+        "className": ""
+    },
+    {
+        "id": "4a22e695390647c3",
+        "type": "ui_tab",
+        "name": "Home",
+        "icon": "dashboard",
+        "disabled": false,
+        "hidden": false
+    }
+]

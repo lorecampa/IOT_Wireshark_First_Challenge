@@ -1,0 +1,40 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+    \PYG{k+kd}{const} \PYG{p}{\PYGZob{}}\PYG{n+nx}{n}\PYG{p}{,} \PYG{n+nx}{id}\PYG{p}{\PYGZcb{}} \PYG{o}{=} \PYG{n+nx}{msg}
+    \PYG{k+kd}{const} \PYG{n+nx}{packets} \PYG{o}{=} \PYG{n+nx}{flow}\PYG{p}{.}\PYG{n+nx}{get}\PYG{p}{(}\PYG{l+s+s2}{\PYGZdq{}packets\PYGZdq{}}\PYG{p}{)} \PYG{o}{??} \PYG{p}{[]}
+    \PYG{k+kd}{const} \PYG{n+nx}{person\PYGZus{}code} \PYG{o}{=} \PYG{n+nx}{flow}\PYG{p}{.}\PYG{n+nx}{get}\PYG{p}{(}\PYG{l+s+s1}{\PYGZsq{}person\PYGZus{}code\PYGZsq{}}\PYG{p}{)}
+    \PYG{k+kd}{const} \PYG{n+nx}{timestamp} \PYG{o}{=} \PYG{o+ow}{new} \PYG{n+nb}{Date}\PYG{p}{().}\PYG{n+nx}{toISOString}\PYG{p}{()}
+    \PYG{k+kd}{const} \PYG{n+nx}{topic} \PYG{o}{=} \PYG{l+s+sb}{`/polimi/iot2023/challenge2/}\PYG{l+s+si}{\PYGZdl{}\PYGZob{}}\PYG{n+nx}{person\PYGZus{}code}\PYG{l+s+si}{\PYGZcb{}}\PYG{l+s+sb}{`}
+
+    \PYG{k+kd}{const} \PYG{n+nx}{messages} \PYG{o}{=} \PYG{n+nx}{packets}\PYG{p}{.}\PYG{n+nx}{filter}\PYG{p}{(}\PYG{n+nx}{r} \PYG{p}{=\PYGZgt{}} \PYG{n+nx}{r}\PYG{p}{[}\PYG{l+s+s1}{\PYGZsq{}No.\PYGZsq{}}\PYG{p}{]} \PYG{o}{==} \PYG{n+nx}{n} \PYG{o}{\PYGZam{}\PYGZam{}} \PYG{n+nx}{r}\PYG{p}{[}\PYG{l+s+s1}{\PYGZsq{}Info\PYGZsq{}}\PYG{p}{].}\PYG{n+nx}{startsWith}\PYG{p}{(}\PYG{l+s+s1}{\PYGZsq{}Publish Message\PYGZsq{}}\PYG{p}{))}
+        \PYG{p}{.}\PYG{n+nx}{map}\PYG{p}{(}\PYG{n+nx}{r} \PYG{p}{=\PYGZgt{}} \PYG{p}{\PYGZob{}}
+            \PYG{k+kd}{var} \PYG{p}{\PYGZob{}} \PYG{p}{[}\PYG{l+s+s1}{\PYGZsq{}No.\PYGZsq{}}\PYG{p}{]}\PYG{o}{:} \PYG{n+nx}{No}\PYG{p}{,} \PYG{p}{[}\PYG{l+s+s1}{\PYGZsq{}Info\PYGZsq{}}\PYG{p}{]}\PYG{o}{:} \PYG{n+nx}{info}\PYG{p}{,} \PYG{p}{[}\PYG{l+s+s1}{\PYGZsq{}Message\PYGZsq{}}\PYG{p}{]}\PYG{o}{:} \PYG{n+nx}{message}\PYG{p}{,} \PYG{p}{...}\PYG{n+nx}{rest} \PYG{p}{\PYGZcb{}} \PYG{o}{=} \PYG{n+nx}{r}\PYG{p}{;}
+            \PYG{k+kd}{const} \PYG{n+nx}{regex\PYGZus{}infos} \PYG{o}{=} \PYG{l+s+sr}{/(?\PYGZlt{}=\PYGZbs{}[)[\PYGZca{}\PYGZbs{}[\PYGZbs{}]]*(?=\PYGZbs{}])/g}\PYG{p}{;}
+            \PYG{k+kd}{const} \PYG{n+nx}{topics} \PYG{o}{=} \PYG{n+nx}{info} \PYG{o}{?} \PYG{n+nx}{info}\PYG{p}{.}\PYG{n+nx}{match}\PYG{p}{(}\PYG{n+nx}{regex\PYGZus{}infos}\PYG{p}{)} \PYG{o}{:} \PYG{p}{[]}
+            \PYG{k+kd}{const} \PYG{n+nx}{regex\PYGZus{}messages} \PYG{o}{=} \PYG{l+s+sr}{/\PYGZob{}[\PYGZca{}\PYGZcb{}]+\PYGZcb{}/g}\PYG{p}{;}
+            \PYG{k+kd}{const} \PYG{n+nx}{messages} \PYG{o}{=} \PYG{n+nx}{message} \PYG{o}{?} \PYG{n+nx}{message}\PYG{p}{.}\PYG{n+nx}{match}\PYG{p}{(}\PYG{n+nx}{regex\PYGZus{}messages}\PYG{p}{)} \PYG{o}{:} \PYG{p}{[]}
+            \PYG{k}{return} \PYG{p}{\PYGZob{}} \PYG{p}{...}\PYG{n+nx}{rest}\PYG{p}{,} \PYG{n+nx}{topics}\PYG{p}{,} \PYG{n+nx}{messages} \PYG{p}{\PYGZcb{};}
+        \PYG{p}{\PYGZcb{})}
+        \PYG{p}{.}\PYG{n+nx}{flatMap}\PYG{p}{(}\PYG{n+nx}{r} \PYG{p}{=\PYGZgt{}} \PYG{p}{\PYGZob{}}
+            \PYG{k+kd}{const} \PYG{n+nx}{res} \PYG{o}{=} \PYG{p}{[];}
+            \PYG{k+kd}{const} \PYG{n+nx}{topic\PYGZus{}len} \PYG{o}{=} \PYG{n+nx}{r}\PYG{p}{.}\PYG{n+nx}{topics} \PYG{o}{?} \PYG{n+nx}{r}\PYG{p}{.}\PYG{n+nx}{topics}\PYG{p}{.}\PYG{n+nx}{length} \PYG{o}{:} \PYG{l+m+mf}{0}\PYG{p}{;}
+            \PYG{k}{for} \PYG{p}{(}\PYG{k+kd}{let} \PYG{n+nx}{i} \PYG{o}{=} \PYG{l+m+mf}{0}\PYG{p}{;} \PYG{n+nx}{i} \PYG{o}{\PYGZlt{}} \PYG{n+nx}{topic\PYGZus{}len}\PYG{p}{;} \PYG{n+nx}{i}\PYG{o}{++}\PYG{p}{)} \PYG{p}{\PYGZob{}}
+                \PYG{k+kd}{const} \PYG{p}{\PYGZob{}}\PYG{n+nx}{topics}\PYG{p}{,} \PYG{n+nx}{messages}\PYG{p}{,} \PYG{p}{...}\PYG{n+nx}{rest}\PYG{p}{\PYGZcb{}} \PYG{o}{=} \PYG{n+nx}{r}
+                \PYG{n+nx}{res}\PYG{p}{.}\PYG{n+nx}{push}\PYG{p}{(\PYGZob{}}
+                    \PYG{p}{...}\PYG{n+nx}{rest}\PYG{p}{,}
+                    \PYG{n+nx}{topic}\PYG{o}{:} \PYG{n+nx}{topics}\PYG{p}{[}\PYG{n+nx}{i}\PYG{p}{],}
+                    \PYG{n+nx}{message}\PYG{o}{:} \PYG{n+nx}{messages}\PYG{p}{[}\PYG{n+nx}{i}\PYG{p}{]}
+                    \PYG{p}{\PYGZcb{})}
+            \PYG{p}{\PYGZcb{}}
+            \PYG{k}{return} \PYG{n+nx}{res}\PYG{p}{;}
+        \PYG{p}{\PYGZcb{})}
+        \PYG{p}{.}\PYG{n+nx}{map}\PYG{p}{(}\PYG{n+nx}{p} \PYG{p}{=\PYGZgt{}} \PYG{p}{\PYGZob{}}
+            \PYG{k+kd}{const} \PYG{p}{\PYGZob{}}\PYG{n+nx}{message}\PYG{p}{\PYGZcb{}} \PYG{o}{=} \PYG{n+nx}{p}
+            \PYG{k+kd}{const} \PYG{n+nx}{payload} \PYG{o}{=} \PYG{p}{\PYGZob{}}
+            \PYG{l+s+s1}{\PYGZsq{}CURRENT\PYGZus{}TIMESTAMP\PYGZsq{}}\PYG{o}{:} \PYG{n+nx}{timestamp}\PYG{p}{,}
+            \PYG{l+s+s1}{\PYGZsq{}PREVIOUS\PYGZus{}ID\PYGZsq{}}\PYG{o}{:} \PYG{n+nx}{id}\PYG{p}{,}
+            \PYG{l+s+s1}{\PYGZsq{}MQTT\PYGZus{}PUBLISH\PYGZus{}PAYLOAD\PYGZsq{}}\PYG{o}{:} \PYG{n+nx}{message}
+            \PYG{p}{\PYGZcb{}}
+            \PYG{k}{return} \PYG{p}{\PYGZob{}}\PYG{n+nx}{topic}\PYG{p}{,} \PYG{n+nx}{payload}\PYG{p}{\PYGZcb{};}
+        \PYG{p}{\PYGZcb{})}
+    \PYG{k}{return} \PYG{p}{\PYGZob{}}\PYG{n+nx}{payload}\PYG{o}{:} \PYG{n+nx}{messages}\PYG{p}{\PYGZcb{};}
+\end{Verbatim}

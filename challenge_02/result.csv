@@ -1,0 +1,6 @@
+{"unit":"C","long":94,"description":"Room Temperature","lat":98,"range":[10,34],"type":"temperature"}
+{"unit":"C","long":43,"description":"Room Temperature","lat":99,"range":[6,39],"type":"temperature"}
+{"unit":"C","long":46,"description":"Room Temperature","lat":98,"range":[3,37],"type":"temperature"}
+{"unit":"C","long":43,"description":"Room Temperature","lat":51,"range":[4,39],"type":"temperature"}
+{"unit":"C","long":83,"description":"Room Temperature","lat":79,"range":[9,31],"type":"temperature"}
+{"unit":"C","long":73,"description":"Room Temperature","lat":83,"range":[6,43],"type":"temperature"}

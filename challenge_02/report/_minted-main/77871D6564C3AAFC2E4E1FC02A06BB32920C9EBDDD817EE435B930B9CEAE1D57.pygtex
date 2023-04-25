@@ -1,0 +1,6 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{k+kd}{const} \PYG{n+nx}{person\PYGZus{}code} \PYG{o}{=} \PYG{n+nx}{flow}\PYG{p}{.}\PYG{n+nx}{get}\PYG{p}{(}\PYG{l+s+s1}{\PYGZsq{}person\PYGZus{}code\PYGZsq{}}\PYG{p}{);}
+\PYG{k+kd}{const} \PYG{n+nx}{topic} \PYG{o}{=} \PYG{l+s+sb}{`/polimi/iot2023/challenge2/}\PYG{l+s+si}{\PYGZdl{}\PYGZob{}}\PYG{n+nx}{person\PYGZus{}code}\PYG{l+s+si}{\PYGZcb{}}\PYG{l+s+sb}{`}
+\PYG{k+kd}{const} \PYG{n+nx}{action} \PYG{o}{=} \PYG{l+s+s1}{\PYGZsq{}subscribe\PYGZsq{}}\PYG{p}{;}
+\PYG{k}{return} \PYG{p}{\PYGZob{}}\PYG{n+nx}{action}\PYG{p}{,} \PYG{n+nx}{topic}\PYG{p}{\PYGZcb{};}
+\end{Verbatim}
